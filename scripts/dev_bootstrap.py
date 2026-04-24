@@ -35,12 +35,42 @@ def seed_bronze(sqlite_path: Path) -> None:
     con.execute("INSTALL sqlite")
     con.execute("LOAD sqlite")
     con.execute(f"ATTACH '{sqlite_path}' AS legacy (TYPE SQLITE)")
-    # Assumes legacy.snapshots — adjust table name to whatever questrade-extract writes.
     con.execute("""
         CREATE OR REPLACE TABLE bronze.questrade_snapshots AS
-        SELECT * FROM legacy.snapshots
+        SELECT
+            account_number,
+            CAST(snapshot_date AS DATE) AS snapshot_date,
+            symbol,
+            symbol_id,
+            description,
+            currency,
+            quantity,
+            current_price,
+            average_entry_price,
+            current_market_value AS market_value,
+            book_cost,
+            open_pnl,
+            fetched_at
+        FROM legacy.questrade_positions
     """)
     con.execute("DETACH legacy")
+    # Empty bank/cc stubs so dbt sources resolve until bank-cc-extract lands.
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.bank_transactions (
+            account_number VARCHAR,
+            txn_date DATE,
+            amount DOUBLE,
+            raw_description VARCHAR
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.cc_transactions (
+            card_number VARCHAR,
+            txn_date DATE,
+            amount DOUBLE,
+            raw_description VARCHAR
+        )
+    """)
     con.close()
 
 

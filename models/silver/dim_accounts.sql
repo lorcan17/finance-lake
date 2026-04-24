@@ -7,7 +7,7 @@ with questrade as (
     select distinct
         account_number as account_id,
         'questrade' as source_system,
-        account_type as account_subtype,
+        cast(null as varchar) as account_subtype,
         'investment' as account_kind
     from {{ source('bronze', 'questrade_snapshots') }}
 ),

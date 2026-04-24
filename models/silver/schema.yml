@@ -10,7 +10,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['questrade', 'bank', 'credit_card']
+              arguments:
+                values: ['questrade', 'bank', 'credit_card']
 
   - name: dim_merchants
     description: "Canonical merchant dimension with OpenAI embeddings. Populated by embed_enrich."
