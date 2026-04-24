@@ -1,0 +1,15 @@
+finance_lake:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('HOME') }}/.local/share/finance-lake/finance.duckdb"
+      extensions:
+        - vss
+      threads: 4
+    prod:
+      type: duckdb
+      path: /var/lib/finance-lake/finance.duckdb
+      extensions:
+        - vss
+      threads: 4

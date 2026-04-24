@@ -1,0 +1,18 @@
+.envrc
+.direnv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# local data
+*.duckdb
+*.duckdb.wal
+*.db
+data/

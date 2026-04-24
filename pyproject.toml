@@ -1,0 +1,25 @@
+[project]
+name = "finance-lake"
+version = "0.1.0"
+description = "Silver + Gold layer and embed-enrich service for Project Foundry"
+requires-python = ">=3.12"
+dependencies = [
+    "dbt-duckdb>=1.9.0",
+    "duckdb>=1.4.4",
+    "openai>=1.54.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.9.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.7.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

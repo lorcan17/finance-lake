@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: dim_accounts
+    description: "Unified account dimension across Questrade, bank, and credit card sources."
+    columns:
+      - name: account_id
+        tests: [not_null]
+      - name: source_system
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['questrade', 'bank', 'credit_card']
+
+  - name: dim_merchants
+    description: "Canonical merchant dimension with OpenAI embeddings. Populated by embed_enrich."
+    columns:
+      - name: merchant_id
+        tests: [unique, not_null]
+
+  - name: fact_transactions
+    description: "All money movements across bank + credit card sources. One row per txn."
+    columns:
+      - name: transaction_id
+        tests: [unique, not_null]
+      - name: account_id
+        tests: [not_null]

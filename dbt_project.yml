@@ -1,0 +1,33 @@
+name: finance_lake
+version: 0.1.0
+config-version: 2
+
+profile: finance_lake
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+on-run-start:
+  - "INSTALL vss"
+  - "LOAD vss"
+  - "SET hnsw_enable_experimental_persistence = true"
+
+models:
+  finance_lake:
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table
+
+seeds:
+  finance_lake:
+    +schema: silver

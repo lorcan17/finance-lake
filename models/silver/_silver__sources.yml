@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: questrade_snapshots
+        description: "Daily position/balance snapshots from Questrade API. Grain: account × symbol × date."
+      - name: bank_transactions
+        description: "Bank statement lines parsed from PDF. Grain: account × date × amount × raw_description."
+      - name: cc_transactions
+        description: "Credit card statement lines parsed from PDF. Grain: card × date × amount × raw_description."
