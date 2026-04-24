@@ -16,3 +16,12 @@ logs/
 *.duckdb.wal
 *.db
 data/
+
+# Seeds contain personal data (budgets, merchant patterns).
+# Templates committed as *.example.csv; real seeds gitignored.
+# See seeds/README.md.
+seeds/*.csv
+!seeds/*.example.csv
+
+# Claude Code local settings
+.claude/settings.local.json

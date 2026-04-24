@@ -1,0 +1,42 @@
+rule_id,category_id,pattern,priority
+r001,transfer,payment received,10
+r002,transfer,automatic pymt,10
+r003,transfer,pymt received,10
+r004,transfer,e-transfer,10
+r005,fees,membership fee,20
+r006,fees,annual fee,20
+r007,fees,interest charge,20
+r008,fees,overdraft,20
+r009,fees,nsf,20
+r010,fees,foreign currency conversion,20
+r011,groceries,grocery,30
+r012,groceries,supermarket,30
+r013,groceries,costco,30
+r014,groceries,whole foods,30
+r015,groceries,shoppers drug mart,30
+r101,dining,starbucks,40
+r102,dining,mcdonald,40
+r103,dining,uber eats,40
+r104,dining,doordash,40
+r105,dining,skip the dishes,40
+r106,dining,restaurant,40
+r107,dining,cafe,40
+r201,transport,uber,50
+r202,transport,lyft,50
+r203,transport,compass,50
+r204,fuel,petro-canada,50
+r205,fuel,shell,50
+r206,fuel,esso,50
+r301,subscriptions,netflix,60
+r302,subscriptions,spotify,60
+r303,subscriptions,apple.com/bill,60
+r304,subscriptions,google *,60
+r305,subscriptions,openai,60
+r401,utilities,bc hydro,70
+r402,utilities,fortisbc,70
+r403,utilities,telus,70
+r404,utilities,rogers,70
+r405,utilities,shaw,70
+r501,health,pharmacy,80
+r502,health,dental,80
+r503,health,clinic,80

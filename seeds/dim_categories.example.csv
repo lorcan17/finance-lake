@@ -4,6 +4,7 @@ dining,Dining,
 transport,Transport,
 fuel,Fuel,transport
 transit,Public Transit,transport
+auto,Auto & Maintenance,transport
 utilities,Utilities,
 rent,Rent / Mortgage,
 subscriptions,Subscriptions,
@@ -11,6 +12,8 @@ entertainment,Entertainment,
 shopping,Shopping,
 health,Health,
 travel,Travel,
+kids_family,Kids & Family,
 income,Income,
 transfer,Internal Transfer,
+fees,Banking & Fees,
 uncategorised,Uncategorised,
