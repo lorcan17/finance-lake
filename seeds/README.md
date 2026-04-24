@@ -10,15 +10,17 @@ dbt seed files. Real seeds are **not committed** — they contain personal data
 | `dim_categories.csv` | gitignored | Spend categories used by Gold models |
 | `dim_budgets.csv` | gitignored | Per-category monthly budget targets (CAD) |
 | `dim_category_rules.csv` | gitignored | Substring → category rules used by `embed_enrich` |
+| `dim_account_normalization.csv` | gitignored | Friendly names + +/- signage correction |
 | `*.example.csv` | committed | Generic templates showing the schema |
 
 ## Local development
 
 ```bash
 # First-time setup: copy templates and personalise
-cp seeds/dim_categories.example.csv     seeds/dim_categories.csv
-cp seeds/dim_budgets.example.csv        seeds/dim_budgets.csv
-cp seeds/dim_category_rules.example.csv seeds/dim_category_rules.csv
+cp seeds/dim_categories.example.csv            seeds/dim_categories.csv
+cp seeds/dim_budgets.example.csv               seeds/dim_budgets.csv
+cp seeds/dim_category_rules.example.csv        seeds/dim_category_rules.csv
+cp seeds/dim_account_normalization.example.csv seeds/dim_account_normalization.csv
 # Edit the .csv files (not the .example.csv) with your real data.
 ```
 
