@@ -5,7 +5,8 @@
 
 with bank as (
     select
-        md5(concat_ws('|', account_number, txn_date, amount, raw_description)) as transaction_id,
+        md5(concat_ws('|', owner, account_number, txn_date, amount, raw_description)) as transaction_id,
+        owner,
         account_number as account_id,
         txn_date,
         amount,
@@ -17,7 +18,8 @@ with bank as (
 
 cc as (
     select
-        md5(concat_ws('|', card_number, txn_date, amount, raw_description)) as transaction_id,
+        md5(concat_ws('|', owner, card_number, txn_date, amount, raw_description)) as transaction_id,
+        owner,
         card_number as account_id,
         txn_date,
         amount,

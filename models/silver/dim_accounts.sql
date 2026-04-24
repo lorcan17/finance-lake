@@ -6,6 +6,7 @@
 with questrade as (
     select distinct
         account_number as account_id,
+        cast(null as varchar) as owner,
         'questrade' as source_system,
         cast(null as varchar) as account_subtype,
         'investment' as account_kind
@@ -15,6 +16,7 @@ with questrade as (
 bank as (
     select distinct
         account_number as account_id,
+        owner,
         'bank' as source_system,
         cast(null as varchar) as account_subtype,
         'bank' as account_kind
@@ -24,6 +26,7 @@ bank as (
 cc as (
     select distinct
         card_number as account_id,
+        owner,
         'credit_card' as source_system,
         cast(null as varchar) as account_subtype,
         'credit_card' as account_kind
