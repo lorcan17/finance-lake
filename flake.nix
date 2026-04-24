@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
   inputs.statement-extract = {
-    url = "github:lorcan/statement-extract";
+    url = "github:lorcan17/statement-extract";
     inputs.nixpkgs.follows = "nixpkgs";
   };
 
