@@ -31,8 +31,24 @@ cc as (
         cast(null as varchar) as account_subtype,
         'credit_card' as account_kind
     from {{ source('bronze', 'cc_transactions') }}
+),
+
+unified as (
+    select * from questrade
+    union all select * from bank
+    union all select * from cc
 )
 
-select * from questrade
-union all select * from bank
-union all select * from cc
+select
+    u.account_id,
+    u.owner,
+    u.source_system,
+    u.account_subtype,
+    u.account_kind,
+    coalesce(n.friendly_name, u.account_id) as friendly_name,
+    coalesce(n.inversion_factor, 1) as inversion_factor,
+    coalesce(n.is_active, true) as is_active,
+    coalesce(n.expected_frequency, 'monthly') as expected_frequency,
+    n.start_date
+from unified u
+left join {{ ref('dim_account_normalization') }} n on u.account_id = n.account_id

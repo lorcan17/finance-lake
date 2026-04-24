@@ -1,0 +1,17 @@
+category_id,category_name,parent_category_id
+dining,Dining,
+entertainment,Entertainment,
+fees,Fees,
+fuel,Fuel,transport
+groceries,Groceries,
+health,Health,
+income,Income,
+rent,Rent / Mortgage,
+shopping,Shopping,
+subscriptions,Subscriptions,
+transfer,Internal Transfer,
+transit,Public Transit,transport
+transport,Transport,
+travel,Travel,
+uncategorised,Uncategorised,
+utilities,Utilities,

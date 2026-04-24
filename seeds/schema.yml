@@ -1,0 +1,22 @@
+version: 2
+
+seeds:
+  - name: dim_account_normalization
+    config:
+      column_types:
+        account_id: varchar
+        friendly_name: varchar
+        inversion_factor: integer
+        is_active: boolean
+        expected_frequency: varchar
+        start_date: date
+
+  - name: dim_account_normalization_example
+    config:
+      column_types:
+        account_id: varchar
+        friendly_name: varchar
+        inversion_factor: integer
+        is_active: boolean
+        expected_frequency: varchar
+        start_date: date

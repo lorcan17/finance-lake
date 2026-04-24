@@ -22,7 +22,8 @@ bank as (
         amount,
         raw_description,
         cast(null as varchar) as merchant_id,
-        'bank' as source_system
+        'bank' as source_system,
+        source_pdf
     from bank_numbered
 ),
 
@@ -45,9 +46,31 @@ cc as (
         amount,
         raw_description,
         cast(null as varchar) as merchant_id,
-        'credit_card' as source_system
+        'credit_card' as source_system,
+        source_pdf
     from cc_numbered
+),
+
+unified as (
+    select * from bank
+    union all select * from cc
 )
 
-select * from bank
-union all select * from cc
+select
+    u.transaction_id,
+    u.owner,
+    u.account_id,
+    a.friendly_name as account_name,
+    a.account_kind,
+    u.txn_date,
+    u.amount * a.inversion_factor as amount,
+    u.raw_description,
+    lower(regexp_replace(u.raw_description, '[^a-zA-Z0-9 ]', ' ', 'g')) as clean_description,
+    u.merchant_id,
+    u.source_system,
+    dayname(u.txn_date) as day_of_week_name,
+    case when dayofweek(u.txn_date) in (0, 6) then true else false end as is_weekend,
+    false as is_transfer, -- Placeholder for fact_transfers override
+    u.source_pdf
+from unified u
+left join {{ ref('dim_accounts') }} a on u.account_id = a.account_id

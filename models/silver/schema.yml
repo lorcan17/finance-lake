@@ -6,6 +6,10 @@ models:
     columns:
       - name: account_id
         tests: [not_null]
+      - name: friendly_name
+        description: "Human-readable name for the account."
+      - name: inversion_factor
+        description: "Multiplier to normalise transaction signs (1 or -1)."
       - name: source_system
         tests:
           - not_null
@@ -26,3 +30,15 @@ models:
         tests: [unique, not_null]
       - name: account_id
         tests: [not_null]
+      - name: amount
+        description: "Normalised amount (negative = spend, positive = income)."
+      - name: clean_description
+        description: "Lowercase, alphanumeric-only description for matching."
+
+  - name: fact_transfers
+    description: "Matched internal transfers (CC payments, savings)."
+    columns:
+      - name: transaction_id
+        tests: [not_null]
+      - name: matched_transaction_id
+        description: "ID of the matched transaction (null for external transfers)"

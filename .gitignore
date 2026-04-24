@@ -19,9 +19,11 @@ data/
 
 # Seeds contain personal data (budgets, merchant patterns).
 # Templates committed as *.example.csv; real seeds gitignored.
+# dim_categories is a generic shared taxonomy and is committed.
 # See seeds/README.md.
 seeds/*.csv
 !seeds/*.example.csv
+!seeds/dim_categories.csv
 
 # Claude Code local settings
 .claude/settings.local.json
