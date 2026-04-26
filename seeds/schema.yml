@@ -20,3 +20,10 @@ seeds:
         is_active: boolean
         expected_frequency: varchar
         start_date: date
+
+  - name: dim_holders
+    description: "holder_raw → owner mapping. Real version PII; gitignored. See dim_holders.example.csv."
+    config:
+      column_types:
+        holder_raw: varchar
+        owner: varchar

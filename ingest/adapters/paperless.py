@@ -16,12 +16,14 @@ Env contract (deployment-provided):
 - PAPERLESS_API_TOKEN          : token minted in Paperless UI (optional —
                                  if unset, ingest still happens, PATCH is skipped)
 - FINANCE_DUCKDB               : path to finance.duckdb
-- HOLDER_OWNER_MAP_JSON        : JSON mapping {"<holder string>": "<owner key>"}
-                                 (optional; "/" in holder → "joint")
+- DIM_HOLDERS_CSV              : path to dim_holders.csv seed (holder_raw,owner).
+                                 Optional; if unset or holder absent, owner
+                                 falls back to "_unowned" and the doc surfaces
+                                 in silver.review_unmapped_holders.
 """
 from __future__ import annotations
 
-import json
+import csv
 import os
 import sys
 from pathlib import Path
@@ -92,11 +94,19 @@ def _patch_paperless(base: str, token: str, doc_id: int, result: IngestResult) -
 
 
 def _resolve_owner(holder: str) -> str:
-    if "/" in holder:
-        return "joint"
-    raw = os.environ.get("HOLDER_OWNER_MAP_JSON", "{}")
-    mapping = json.loads(raw)
-    return mapping.get(holder, "_unowned")
+    """Look up holder_raw → owner in the dim_holders.csv seed.
+
+    Unmapped holders return "_unowned"; they surface in
+    `silver.review_unmapped_holders` for triage and CSV update.
+    """
+    csv_path = os.environ.get("DIM_HOLDERS_CSV")
+    if not csv_path or not Path(csv_path).exists():
+        return "_unowned"
+    with open(csv_path, newline="") as f:
+        for row in csv.DictReader(f):
+            if row.get("holder_raw") == holder:
+                return row.get("owner") or "_unowned"
+    return "_unowned"
 
 
 def _title_for(result: IngestResult) -> str:
