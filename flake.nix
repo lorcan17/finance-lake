@@ -16,16 +16,35 @@
         python = pkgs.python312;
         statementExtractPkg = statement-extract.packages.${system}.default;
 
+        # Inline dbt-duckdb derivation — missing from nixpkgs as of 2026-04
+        # (tracked in PR #457151). Inlined here rather than via overlay to
+        # avoid invalidating the binary cache for the whole python312 set.
+        dbt-duckdb = python.pkgs.buildPythonPackage rec {
+          pname = "dbt-duckdb";
+          version = "1.10.1";
+          pyproject = true;
+          src = pkgs.fetchFromGitHub {
+            owner = "duckdb";
+            repo = "dbt-duckdb";
+            tag = version;
+            hash = "sha256-Xqd2u2x0rPfPwFYNDJPvQzCNyDa9TpmdSWQLyKRMLtk=";
+          };
+          build-system = with python.pkgs; [ setuptools pbr ];
+          dependencies = with python.pkgs; [ dbt-common dbt-adapters dbt-core duckdb ];
+          env.PBR_VERSION = version;
+          pythonImportsCheck = [ "dbt.adapters.duckdb" ];
+          doCheck = false;
+        };
+
         # Combined Python env: embed_enrich runtime deps + dbt-duckdb + the
         # statement-extract package (consumed as a library, not just a CLI).
         pythonEnv = python.withPackages (ps: with ps; [
           dbt-core
-          dbt-duckdb
           duckdb
           openai
           httpx
           pydantic
-        ] ++ [ statementExtractPkg ]);
+        ] ++ [ dbt-duckdb statementExtractPkg ]);
 
         # Ship the dbt project tree (models, seeds, profiles.yml, dbt_project.yml,
         # the embed_enrich Python module) under $out/share so wrappers can cd into
