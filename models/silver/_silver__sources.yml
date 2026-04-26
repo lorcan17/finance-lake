@@ -6,7 +6,11 @@ sources:
     tables:
       - name: questrade_snapshots
         description: "Daily position/balance snapshots from Questrade API. Grain: account × symbol × date."
+      - name: bank_statements
+        description: "Bank statement headers — one row per parsed PDF (or per sub-account for multi-account statements). Holds metadata, header totals, validation_issues, ingestion provenance."
+      - name: cc_statements
+        description: "Credit card statement headers — one row per parsed PDF."
       - name: bank_transactions
-        description: "Bank statement lines parsed from PDF. Grain: account × date × amount × raw_description."
+        description: "Bank statement detail lines. Grain: statement × posting_date × amount × raw_description. FK statement_sha256 → bank_statements."
       - name: cc_transactions
-        description: "Credit card statement lines parsed from PDF. Grain: card × date × amount × raw_description."
+        description: "Credit card statement detail lines. Grain: statement × txn_date × amount × raw_description. FK statement_sha256 → cc_statements."

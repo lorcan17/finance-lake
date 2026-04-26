@@ -38,27 +38,79 @@ def _backup_duckdb() -> Path | None:
 
 def _reset_bronze(con) -> None:
     con.execute("CREATE SCHEMA IF NOT EXISTS bronze")
-    con.execute("DROP TABLE IF EXISTS bronze.bank_transactions")
-    con.execute("DROP TABLE IF EXISTS bronze.cc_transactions")
+    for tbl in (
+        "bronze.bank_transactions",
+        "bronze.cc_transactions",
+        "bronze.bank_statements",
+        "bronze.cc_statements",
+    ):
+        con.execute(f"DROP TABLE IF EXISTS {tbl}")
+
     con.execute("""
-        CREATE TABLE bronze.bank_transactions (
+        CREATE TABLE bronze.bank_statements (
+            sha256 VARCHAR,
+            source_type VARCHAR,
+            source_id VARCHAR,
             holder VARCHAR,
             bank VARCHAR,
+            product VARCHAR,
+            account_type VARCHAR,
+            account_number VARCHAR,
+            branch_name VARCHAR,
+            transit_number VARCHAR,
+            plan_name VARCHAR,
+            period_start DATE,
+            period_end DATE,
+            opening_balance DOUBLE,
+            total_deducted DOUBLE,
+            total_added DOUBLE,
+            closing_balance DOUBLE,
+            validation_issues VARCHAR[],
+            parsed_at TIMESTAMPTZ
+        )
+    """)
+    con.execute("""
+        CREATE TABLE bronze.cc_statements (
+            sha256 VARCHAR,
+            source_type VARCHAR,
+            source_id VARCHAR,
+            holder VARCHAR,
+            bank VARCHAR,
+            product VARCHAR,
+            card_number_last4 VARCHAR,
+            statement_date DATE,
+            period_start DATE,
+            period_end DATE,
+            payment_due_date DATE,
+            previous_balance DOUBLE,
+            payments_and_credits DOUBLE,
+            purchases_and_other_charges DOUBLE,
+            new_installments DOUBLE,
+            cash_advances DOUBLE,
+            total_interest_charges DOUBLE,
+            fees DOUBLE,
+            total_balance DOUBLE,
+            minimum_payment_due DOUBLE,
+            credit_limit DOUBLE,
+            available_credit DOUBLE,
+            validation_issues VARCHAR[],
+            parsed_at TIMESTAMPTZ,
+            n_details INTEGER
+        )
+    """)
+    con.execute("""
+        CREATE TABLE bronze.bank_transactions (
+            statement_sha256 VARCHAR,
             account_number VARCHAR,
             txn_date DATE,
             amount DOUBLE,
             raw_description VARCHAR,
-            running_balance DOUBLE,
-            source_type VARCHAR,
-            source_id VARCHAR,
-            sha256 VARCHAR,
-            validation_issues VARCHAR[]
+            running_balance DOUBLE
         )
     """)
     con.execute("""
         CREATE TABLE bronze.cc_transactions (
-            holder VARCHAR,
-            bank VARCHAR,
+            statement_sha256 VARCHAR,
             card_number VARCHAR,
             txn_date DATE,
             posting_date DATE,
@@ -66,10 +118,7 @@ def _reset_bronze(con) -> None:
             raw_description VARCHAR,
             original_currency VARCHAR,
             original_amount DOUBLE,
-            source_type VARCHAR,
-            source_id VARCHAR,
-            sha256 VARCHAR,
-            validation_issues VARCHAR[]
+            exchange_rate DOUBLE
         )
     """)
 

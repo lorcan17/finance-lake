@@ -1,7 +1,8 @@
 {{ config(materialized='table') }}
 
 -- Unified account list: Questrade (TFSA/RRSP/cash), bank, credit card.
--- First pass: derive from distinct account identifiers in each bronze source.
+-- Bank/CC accounts are derived from the statement headers (one row per
+-- parsed statement) so we don't depend on detail rows existing.
 
 with questrade as (
     select distinct
@@ -20,17 +21,17 @@ bank as (
         'bank' as source_system,
         cast(null as varchar) as account_subtype,
         'bank' as account_kind
-    from {{ source('bronze', 'bank_transactions') }}
+    from {{ source('bronze', 'bank_statements') }}
 ),
 
 cc as (
     select distinct
-        card_number as account_id,
+        card_number_last4 as account_id,
         holder,
         'credit_card' as source_system,
         cast(null as varchar) as account_subtype,
         'credit_card' as account_kind
-    from {{ source('bronze', 'cc_transactions') }}
+    from {{ source('bronze', 'cc_statements') }}
 ),
 
 unified as (
@@ -40,9 +41,9 @@ unified as (
 ),
 
 deduped as (
-    -- Joint cards yield one bronze row per supplementary holder name. Collapse
-    -- to one row per (source_system, account_id) so the fact_transactions
-    -- left-join doesn't fan out.
+    -- Joint cards have multiple holder strings (primary + supplementary)
+    -- across statements. Collapse to one row per (source_system, account_id)
+    -- so the fact_transactions left-join doesn't fan out.
     select
         account_id,
         any_value(holder) as holder,

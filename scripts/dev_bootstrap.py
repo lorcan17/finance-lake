@@ -54,39 +54,33 @@ def seed_bronze(sqlite_path: Path) -> None:
         FROM legacy.questrade_positions
     """)
     con.execute("DETACH legacy")
-    # Empty bank/cc stubs so dbt sources resolve until bank-cc-extract lands.
-    con.execute("""
-        CREATE TABLE IF NOT EXISTS bronze.bank_transactions (
-            holder VARCHAR,
-            bank VARCHAR,
-            account_number VARCHAR,
-            txn_date DATE,
-            amount DOUBLE,
-            raw_description VARCHAR,
-            running_balance DOUBLE,
-            source_type VARCHAR,
-            source_id VARCHAR,
-            sha256 VARCHAR,
-            validation_issues VARCHAR[]
-        )
-    """)
-    con.execute("""
-        CREATE TABLE IF NOT EXISTS bronze.cc_transactions (
-            holder VARCHAR,
-            bank VARCHAR,
-            card_number VARCHAR,
-            txn_date DATE,
-            posting_date DATE,
-            amount DOUBLE,
-            raw_description VARCHAR,
-            original_currency VARCHAR,
-            original_amount DOUBLE,
-            source_type VARCHAR,
-            source_id VARCHAR,
-            sha256 VARCHAR,
-            validation_issues VARCHAR[]
-        )
-    """)
+    # Empty stubs so dbt sources resolve when only Questrade has been seeded.
+    # Real shape is created by `scripts/ingest_statements.py`; these are placeholders
+    # only and will be dropped + recreated on rebuild.
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS bronze.bank_statements ("
+        "sha256 VARCHAR, holder VARCHAR, bank VARCHAR, product VARCHAR,"
+        " account_number VARCHAR, period_start DATE, period_end DATE,"
+        " opening_balance DOUBLE, closing_balance DOUBLE, total_added DOUBLE,"
+        " total_deducted DOUBLE, validation_issues VARCHAR[])"
+    )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS bronze.cc_statements ("
+        "sha256 VARCHAR, holder VARCHAR, bank VARCHAR, product VARCHAR,"
+        " card_number_last4 VARCHAR, period_start DATE, period_end DATE,"
+        " total_balance DOUBLE, validation_issues VARCHAR[])"
+    )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS bronze.bank_transactions ("
+        "statement_sha256 VARCHAR, account_number VARCHAR, txn_date DATE,"
+        " amount DOUBLE, raw_description VARCHAR, running_balance DOUBLE)"
+    )
+    con.execute(
+        "CREATE TABLE IF NOT EXISTS bronze.cc_transactions ("
+        "statement_sha256 VARCHAR, card_number VARCHAR, txn_date DATE,"
+        " posting_date DATE, amount DOUBLE, raw_description VARCHAR,"
+        " original_currency VARCHAR, original_amount DOUBLE)"
+    )
     con.close()
 
 

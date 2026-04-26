@@ -1,16 +1,26 @@
 {{ config(materialized='table') }}
 
 -- Unified transaction grain across bank + credit card. Investment activity
--- (Questrade) is not a transaction stream in v1 — positions only. Extend later.
+-- (Questrade) is not a transaction stream in v1 — positions only.
+-- Holder is read from the statement header (joined via statement_sha256)
+-- so detail rows stay slim.
 
-with bank_numbered as (
+with bank_with_holder as (
+    select t.*, s.holder
+    from {{ source('bronze', 'bank_transactions') }} t
+    left join {{ source('bronze', 'bank_statements') }} s
+      on t.statement_sha256 = s.sha256
+     and t.account_number = s.account_number
+),
+
+bank_numbered as (
     select
         *,
         row_number() over (
             partition by holder, account_number, txn_date, amount, raw_description, running_balance
-            order by sha256
+            order by statement_sha256
         ) as dup_seq
-    from {{ source('bronze', 'bank_transactions') }}
+    from bank_with_holder
 ),
 
 bank as (
@@ -23,8 +33,15 @@ bank as (
         raw_description,
         cast(null as varchar) as merchant_id,
         'bank' as source_system,
-        sha256
+        statement_sha256
     from bank_numbered
+),
+
+cc_with_holder as (
+    select t.*, s.holder
+    from {{ source('bronze', 'cc_transactions') }} t
+    left join {{ source('bronze', 'cc_statements') }} s
+      on t.statement_sha256 = s.sha256
 ),
 
 cc_numbered as (
@@ -32,9 +49,9 @@ cc_numbered as (
         *,
         row_number() over (
             partition by holder, card_number, txn_date, amount, raw_description
-            order by posting_date, sha256
+            order by posting_date, statement_sha256
         ) as dup_seq
-    from {{ source('bronze', 'cc_transactions') }}
+    from cc_with_holder
 ),
 
 cc as (
@@ -47,7 +64,7 @@ cc as (
         raw_description,
         cast(null as varchar) as merchant_id,
         'credit_card' as source_system,
-        sha256
+        statement_sha256
     from cc_numbered
 ),
 
@@ -70,7 +87,7 @@ select
     u.source_system,
     dayname(u.txn_date) as day_of_week_name,
     case when dayofweek(u.txn_date) in (0, 6) then true else false end as is_weekend,
-    false as is_transfer, -- Placeholder for fact_transfers override
-    u.sha256
+    false as is_transfer,
+    u.statement_sha256
 from unified u
 left join {{ ref('dim_accounts') }} a on u.account_id = a.account_id
