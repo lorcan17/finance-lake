@@ -57,19 +57,22 @@ def seed_bronze(sqlite_path: Path) -> None:
     # Empty bank/cc stubs so dbt sources resolve until bank-cc-extract lands.
     con.execute("""
         CREATE TABLE IF NOT EXISTS bronze.bank_transactions (
-            owner VARCHAR,
+            holder VARCHAR,
             bank VARCHAR,
             account_number VARCHAR,
             txn_date DATE,
             amount DOUBLE,
             raw_description VARCHAR,
             running_balance DOUBLE,
-            source_pdf VARCHAR
+            source_type VARCHAR,
+            source_id VARCHAR,
+            sha256 VARCHAR,
+            validation_issues VARCHAR[]
         )
     """)
     con.execute("""
         CREATE TABLE IF NOT EXISTS bronze.cc_transactions (
-            owner VARCHAR,
+            holder VARCHAR,
             bank VARCHAR,
             card_number VARCHAR,
             txn_date DATE,
@@ -78,7 +81,10 @@ def seed_bronze(sqlite_path: Path) -> None:
             raw_description VARCHAR,
             original_currency VARCHAR,
             original_amount DOUBLE,
-            source_pdf VARCHAR
+            source_type VARCHAR,
+            source_id VARCHAR,
+            sha256 VARCHAR,
+            validation_issues VARCHAR[]
         )
     """)
     con.close()

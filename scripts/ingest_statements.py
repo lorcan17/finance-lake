@@ -1,151 +1,118 @@
-"""Walk ~/Documents/bank-statements/<owner>/<kind>/*.pdf and ingest into bronze.
+"""Rebuild bronze.{bank,cc}_transactions from local PDF archive.
 
-Uses statement-extract's parsers directly (editable dep). Internal validation
-issues are logged but do not block ingest — bronze is immutable raw; dbt tests
-catch problems downstream.
+Walks ~/Documents/bank-statements/<owner>/<bank_product>/[<last4>/]*.pdf and
+re-ingests every PDF via `ingest.core.ingest_pdf`. Drops + recreates the
+bronze tables with the current schema (source_type, source_id, sha256,
+validation_issues). Backs up `finance.duckdb` before any destructive op so
+post-run row counts can be diffed against the prior run.
+
+Note: bronze schema is the system of record but storage-cheap; we rebuild
+rather than migrate. Backup gives us a comparison point if a parser change
+introduces a regression.
 """
-
 from __future__ import annotations
 
-from collections.abc import Iterable
+import shutil
+from datetime import datetime
 from pathlib import Path
-
-from bank_pdf_extract.parsers import (
-    amex_cobalt,
-    bmo_credit_card,
-    bmo_deposit_account,
-    coast_capital_chequing,
-    coast_capital_credit,
-    eq_bank,
-)
 
 from embed_enrich.duckdb_conn import connect
 
+from ingest.adapters import local
+from ingest.core import ingest_pdf
+
 STATEMENTS_ROOT = Path.home() / "Documents" / "bank-statements"
 
-# Folder name → (parser module, destination kind).
-FOLDER_MAP: dict[str, tuple[object, str]] = {
-    "bmo_credit_card": (bmo_credit_card, "cc"),
-    "bmo_deposit_account": (bmo_deposit_account, "bank"),
-    "coast_capital_chequing": (coast_capital_chequing, "bank"),
-    "coast_capital_credit": (coast_capital_credit, "cc"),
-    "amex": (amex_cobalt, "cc"),
-    "eq_bank_savings": (eq_bank, "bank"),
-}
+
+def _backup_duckdb() -> Path | None:
+    """Copy finance.duckdb next to itself with a timestamp suffix."""
+    db_path = Path.home() / ".local" / "share" / "finance-lake" / "finance.duckdb"
+    if not db_path.exists():
+        # New install — nothing to back up. Caller proceeds.
+        return None
+    ts = datetime.now().strftime("%Y%m%dT%H%M%S")
+    backup = db_path.with_suffix(f".duckdb.bak.{ts}")
+    shutil.copy2(db_path, backup)
+    return backup
 
 
-def iter_pdfs() -> Iterable[tuple[str, str, Path]]:
-    for owner_dir in STATEMENTS_ROOT.iterdir():
-        if not owner_dir.is_dir() or owner_dir.name.startswith("."):
-            continue
-        for kind_dir in owner_dir.iterdir():
-            if not kind_dir.is_dir() or kind_dir.name not in FOLDER_MAP:
-                continue
-            for pdf in sorted(kind_dir.rglob("*.pdf")):
-                yield owner_dir.name, kind_dir.name, pdf
-
-
-def insert_cc(con, owner: str, bank: str, pdf: Path, header, details) -> None:
-    rows = [
-        (
-            owner,
-            bank,
-            d.card_number,
-            d.transaction_date,
-            d.posting_date,
-            float(d.amount),
-            d.description,
-            d.original_currency,
-            float(d.original_amount) if d.original_amount is not None else None,
-            str(pdf),
+def _reset_bronze(con) -> None:
+    con.execute("CREATE SCHEMA IF NOT EXISTS bronze")
+    con.execute("DROP TABLE IF EXISTS bronze.bank_transactions")
+    con.execute("DROP TABLE IF EXISTS bronze.cc_transactions")
+    con.execute("""
+        CREATE TABLE bronze.bank_transactions (
+            holder VARCHAR,
+            bank VARCHAR,
+            account_number VARCHAR,
+            txn_date DATE,
+            amount DOUBLE,
+            raw_description VARCHAR,
+            running_balance DOUBLE,
+            source_type VARCHAR,
+            source_id VARCHAR,
+            sha256 VARCHAR,
+            validation_issues VARCHAR[]
         )
-        for d in details
-    ]
-    if not rows:
-        return
-    con.executemany(
-        """
-        INSERT INTO bronze.cc_transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        rows,
-    )
-
-
-def insert_bank(con, owner: str, bank: str, pdf: Path, header, details) -> None:
-    acct = header.account_number if header else None
-    rows = [
-        (
-            owner,
-            bank,
-            acct if acct else d.account_number,
-            d.posting_date,
-            float(d.amount),
-            d.description,
-            float(d.running_balance),
-            str(pdf),
+    """)
+    con.execute("""
+        CREATE TABLE bronze.cc_transactions (
+            holder VARCHAR,
+            bank VARCHAR,
+            card_number VARCHAR,
+            txn_date DATE,
+            posting_date DATE,
+            amount DOUBLE,
+            raw_description VARCHAR,
+            original_currency VARCHAR,
+            original_amount DOUBLE,
+            source_type VARCHAR,
+            source_id VARCHAR,
+            sha256 VARCHAR,
+            validation_issues VARCHAR[]
         )
-        for d in details
-    ]
-    if not rows:
-        return
-    con.executemany(
-        """
-        INSERT INTO bronze.bank_transactions VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        rows,
-    )
-
-
-def process_one(con, owner: str, kind: str, pdf: Path) -> tuple[int, str | None]:
-    parser, dest = FOLDER_MAP[kind]
-    try:
-        res = parser.parse(pdf)
-    except Exception as e:
-        return 0, f"parse error: {e}"
-
-    # Multi-account (Coast Capital chequing) returns MultiAccountDepositStatement.
-    if hasattr(res, "accounts"):
-        total = 0
-        bank_name = res.bank
-        for sub in res.accounts:
-            insert_bank(con, owner, bank_name, pdf, sub.header, sub.details)
-            total += len(sub.details)
-        return total, None
-
-    # Tuple (header, details) per cli._PARSERS behaviour.
-    header, details = res
-    bank_name = header.bank if hasattr(header, "bank") else kind
-    if dest == "cc":
-        insert_cc(con, owner, bank_name, pdf, header, details)
-    else:
-        insert_bank(con, owner, bank_name, pdf, header, details)
-    return len(details), None
+    """)
 
 
 def main() -> None:
+    backup = _backup_duckdb()
+    if backup:
+        print(f"backup: {backup}")
+    else:
+        print("backup: no existing db — skipping")
+
     con = connect()
-    con.execute("DELETE FROM bronze.bank_transactions")
-    con.execute("DELETE FROM bronze.cc_transactions")
+    _reset_bronze(con)
 
     ok = 0
+    skipped_nonfinance = 0
     failed: list[tuple[Path, str]] = []
-    total_rows = 0
+    issues_count = 0
 
-    for owner, kind, pdf in iter_pdfs():
-        count, err = process_one(con, owner, kind, pdf)
-        if err:
-            failed.append((pdf, err))
+    for pdf in sorted(STATEMENTS_ROOT.rglob("*.pdf")):
+        try:
+            result = ingest_pdf(pdf, local.source_for(pdf), con)
+        except Exception as e:
+            failed.append((pdf, f"{type(e).__name__}: {e}"))
+            continue
+        if not result.was_finance_doc:
+            skipped_nonfinance += 1
             continue
         ok += 1
-        total_rows += count
+        if result.validation_issues:
+            issues_count += 1
 
     con.close()
 
-    print(f"parsed: {ok} PDFs, {total_rows} detail rows")
+    print(f"ingested: {ok} PDFs, {issues_count} with validation issues")
+    print(f"skipped (not finance): {skipped_nonfinance}")
     if failed:
         print(f"failed: {len(failed)}")
         for pdf, err in failed[:20]:
-            rel = pdf.relative_to(STATEMENTS_ROOT)
+            try:
+                rel = pdf.relative_to(STATEMENTS_ROOT)
+            except ValueError:
+                rel = pdf
             print(f"  {rel}: {err}")
         if len(failed) > 20:
             print(f"  ... and {len(failed) - 20} more")

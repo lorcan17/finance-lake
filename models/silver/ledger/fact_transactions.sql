@@ -7,23 +7,23 @@ with bank_numbered as (
     select
         *,
         row_number() over (
-            partition by owner, account_number, txn_date, amount, raw_description, running_balance
-            order by source_pdf
+            partition by holder, account_number, txn_date, amount, raw_description, running_balance
+            order by sha256
         ) as dup_seq
     from {{ source('bronze', 'bank_transactions') }}
 ),
 
 bank as (
     select
-        md5(concat_ws('|', owner, account_number, txn_date, amount, raw_description, running_balance, dup_seq)) as transaction_id,
-        owner,
+        md5(concat_ws('|', holder, account_number, txn_date, amount, raw_description, running_balance, dup_seq)) as transaction_id,
+        holder,
         account_number as account_id,
         txn_date,
         amount,
         raw_description,
         cast(null as varchar) as merchant_id,
         'bank' as source_system,
-        source_pdf
+        sha256
     from bank_numbered
 ),
 
@@ -31,23 +31,23 @@ cc_numbered as (
     select
         *,
         row_number() over (
-            partition by owner, card_number, txn_date, amount, raw_description
-            order by posting_date, source_pdf
+            partition by holder, card_number, txn_date, amount, raw_description
+            order by posting_date, sha256
         ) as dup_seq
     from {{ source('bronze', 'cc_transactions') }}
 ),
 
 cc as (
     select
-        md5(concat_ws('|', owner, card_number, txn_date, amount, raw_description, dup_seq)) as transaction_id,
-        owner,
+        md5(concat_ws('|', holder, card_number, txn_date, amount, raw_description, dup_seq)) as transaction_id,
+        holder,
         card_number as account_id,
         txn_date,
         amount,
         raw_description,
         cast(null as varchar) as merchant_id,
         'credit_card' as source_system,
-        source_pdf
+        sha256
     from cc_numbered
 ),
 
@@ -58,7 +58,7 @@ unified as (
 
 select
     u.transaction_id,
-    u.owner,
+    u.holder,
     u.account_id,
     a.friendly_name as account_name,
     a.account_kind,
@@ -71,6 +71,6 @@ select
     dayname(u.txn_date) as day_of_week_name,
     case when dayofweek(u.txn_date) in (0, 6) then true else false end as is_weekend,
     false as is_transfer, -- Placeholder for fact_transfers override
-    u.source_pdf
+    u.sha256
 from unified u
 left join {{ ref('dim_accounts') }} a on u.account_id = a.account_id

@@ -40,7 +40,7 @@ actual_data as (
         date_trunc('month', txn_date) as month,
         account_id,
         count(*) as txn_count,
-        count(distinct source_pdf) as statement_count
+        count(distinct sha256) as statement_count
     from {{ ref('fact_transactions') }}
     group by 1, 2
 )

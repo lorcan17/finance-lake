@@ -37,7 +37,7 @@
           src = ./.;
           installPhase = ''
             mkdir -p $out/share/finance-lake
-            cp -r dbt_project.yml profiles.yml models seeds embed_enrich \
+            cp -r dbt_project.yml profiles.yml models seeds embed_enrich ingest \
               $out/share/finance-lake/
           '';
         };
@@ -62,6 +62,14 @@
                 text = ''
                   cd ${projectTree}/share/finance-lake
                   exec dbt "$@"
+                '';
+              })
+              (pkgs.writeShellApplication {
+                name = "ingest-paperless-hook";
+                runtimeInputs = [ pythonEnv ];
+                text = ''
+                  cd ${projectTree}/share/finance-lake
+                  exec python -m ingest.adapters.paperless "$@"
                 '';
               })
             ];

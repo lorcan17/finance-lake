@@ -488,7 +488,7 @@ wheels = [
 
 [[package]]
 name = "finance-lake"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "dbt-duckdb" },
@@ -1495,7 +1495,7 @@ wheels = [
 
 [[package]]
 name = "statement-extract"
-version = "0.0.1"
+version = "0.1.0"
 source = { editable = "../statement-extract" }
 dependencies = [
     { name = "pdfplumber" },
