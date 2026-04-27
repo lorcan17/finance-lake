@@ -116,6 +116,17 @@ def ensure_schema(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def unresolved_descriptions(con: duckdb.DuckDBPyConnection) -> list[str]:
+    # Bronze tables are created lazily by the ingest hook on first PDF.
+    # On a fresh deploy they don't exist yet — return empty rather than
+    # crash the timer-driven enrich job.
+    bronze_tables = {
+        r[0] for r in con.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_schema = 'bronze'"
+        ).fetchall()
+    }
+    if not {"bank_transactions", "cc_transactions"} <= bronze_tables:
+        return []
     rows = con.execute("""
         SELECT DISTINCT raw_description
         FROM (
