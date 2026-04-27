@@ -55,13 +55,21 @@
 
         # Combined Python env: embed_enrich runtime deps + dbt-duckdb + the
         # statement-extract package (consumed as a library, not just a CLI).
-        pythonEnv = python.withPackages (ps: with ps; [
-          dbt-core
-          duckdb
-          openai
-          httpx
-          pydantic
-        ] ++ [ dbt-duckdb statementExtractPkg ]);
+        #
+        # `ignoreCollisions = true`: nixpkgs's `dbt-adapters` and `dbt-core` both
+        # ship `dbt/include/__init__.py` for the PEP 420 namespace, which
+        # buildEnv's default collision check rejects. Skipping the check is
+        # safe — they're identical empty namespace markers.
+        pythonEnv = python.buildEnv.override {
+          extraLibs = (with python.pkgs; [
+            dbt-core
+            duckdb
+            openai
+            httpx
+            pydantic
+          ]) ++ [ dbt-duckdb statementExtractPkg ];
+          ignoreCollisions = true;
+        };
 
         # Ship the dbt project tree (models, seeds, profiles.yml, dbt_project.yml,
         # the embed_enrich Python module) under $out/share so wrappers can cd into
