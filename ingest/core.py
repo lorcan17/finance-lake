@@ -30,6 +30,7 @@ from .sources import IngestResult, SourceRef
 
 
 def ingest_pdf(file_path: Path, source: SourceRef, con) -> IngestResult:
+    ensure_bronze_schema(con)
     parser = detect_parser(file_path)
     if parser is None:
         return IngestResult(was_finance_doc=False, was_new_row=False)
@@ -102,6 +103,53 @@ def ingest_pdf(file_path: Path, source: SourceRef, con) -> IngestResult:
 
 
 # --- helpers ----------------------------------------------------------------
+
+def ensure_bronze_schema(con) -> None:
+    """Create bronze schema + tables if missing. Idempotent."""
+    con.execute("CREATE SCHEMA IF NOT EXISTS bronze")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.bank_statements (
+            sha256 VARCHAR, source_type VARCHAR, source_id VARCHAR,
+            holder VARCHAR, bank VARCHAR, product VARCHAR,
+            account_type VARCHAR, account_number VARCHAR,
+            branch_name VARCHAR, transit_number VARCHAR, plan_name VARCHAR,
+            period_start DATE, period_end DATE,
+            opening_balance DOUBLE, total_deducted DOUBLE,
+            total_added DOUBLE, closing_balance DOUBLE,
+            validation_issues VARCHAR[], parsed_at TIMESTAMPTZ
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.cc_statements (
+            sha256 VARCHAR, source_type VARCHAR, source_id VARCHAR,
+            holder VARCHAR, bank VARCHAR, product VARCHAR,
+            card_number_last4 VARCHAR, statement_date DATE,
+            period_start DATE, period_end DATE, payment_due_date DATE,
+            previous_balance DOUBLE, payments_and_credits DOUBLE,
+            purchases_and_other_charges DOUBLE, new_installments DOUBLE,
+            cash_advances DOUBLE, total_interest_charges DOUBLE,
+            fees DOUBLE, total_balance DOUBLE,
+            minimum_payment_due DOUBLE, credit_limit DOUBLE,
+            available_credit DOUBLE, validation_issues VARCHAR[],
+            parsed_at TIMESTAMPTZ, n_details INTEGER
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.bank_transactions (
+            statement_sha256 VARCHAR, account_number VARCHAR,
+            txn_date DATE, amount DOUBLE,
+            raw_description VARCHAR, running_balance DOUBLE
+        )
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bronze.cc_transactions (
+            statement_sha256 VARCHAR, card_number VARCHAR,
+            txn_date DATE, posting_date DATE, amount DOUBLE,
+            raw_description VARCHAR, original_currency VARCHAR,
+            original_amount DOUBLE, exchange_rate DOUBLE
+        )
+    """)
+
 
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
