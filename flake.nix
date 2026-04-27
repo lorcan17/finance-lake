@@ -35,15 +35,21 @@
           pythonImportsCheck = [ "dbt.adapters.duckdb" ];
           doCheck = false;
 
-          # dbt uses PEP 420 namespace packages (`dbt`, `dbt.adapters`,
-          # `dbt.include`). Each adapter ships its own __init__.py for the
-          # shared namespace dirs; their .pyc bytecode then collides in
-          # buildEnv with dbt-core's. postFixup runs after bytecode
-          # compilation, so this drop sticks.
-          postFixup = ''
-            rm -rf $out/lib/python*/site-packages/dbt/__pycache__
-            rm -rf $out/lib/python*/site-packages/dbt/adapters/__pycache__
-            rm -rf $out/lib/python*/site-packages/dbt/include/__pycache__
+          # dbt uses PEP 420 namespace packages. dbt-duckdb's pbr setup.cfg
+          # `find:` glob ships __init__.py for the shared `dbt`,
+          # `dbt.adapters`, and `dbt.include` namespaces, which collide
+          # with dbt-core in buildEnv. Strip the source files (and any
+          # already-compiled bytecode) so bytecode regen has nothing to
+          # rebuild. dbt-postgres in nixpkgs avoids this by using hatchling.
+          postInstall = ''
+            for sp in $out/lib/python*/site-packages; do
+              rm -f  $sp/dbt/__init__.py
+              rm -f  $sp/dbt/adapters/__init__.py
+              rm -f  $sp/dbt/include/__init__.py
+              rm -rf $sp/dbt/__pycache__
+              rm -rf $sp/dbt/adapters/__pycache__
+              rm -rf $sp/dbt/include/__pycache__
+            done
           '';
         };
 
