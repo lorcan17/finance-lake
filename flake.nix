@@ -34,6 +34,17 @@
           env.PBR_VERSION = version;
           pythonImportsCheck = [ "dbt.adapters.duckdb" ];
           doCheck = false;
+
+          # dbt uses PEP 420 namespace packages (`dbt`, `dbt.adapters`,
+          # `dbt.include`). Each adapter ships its own __init__.py for the
+          # shared namespace dirs; their .pyc bytecode then collides in
+          # buildEnv with dbt-core's. postFixup runs after bytecode
+          # compilation, so this drop sticks.
+          postFixup = ''
+            rm -rf $out/lib/python*/site-packages/dbt/__pycache__
+            rm -rf $out/lib/python*/site-packages/dbt/adapters/__pycache__
+            rm -rf $out/lib/python*/site-packages/dbt/include/__pycache__
+          '';
         };
 
         # Combined Python env: embed_enrich runtime deps + dbt-duckdb + the
