@@ -1,7 +1,7 @@
 {{ config(materialized='view') }}
 
--- Surface large unmatched transactions (>= $500) that aren't flagged as transfers.
--- These are the primary suspects for inflating income/spending totals.
+-- Surface large uncategorised transactions (>= $5,000) that aren't flagged as transfers.
+-- These need manual review — Interac receipts, large deposits, one-off spending.
 
 select
     transaction_date,
@@ -13,5 +13,6 @@ select
     source_system
 from {{ ref('semantic_transactions') }}
 where not is_transfer
-  and abs(amount) >= 500
+  and category_name = 'Uncategorised'
+  and abs(amount) >= 5000
 order by abs(amount) desc

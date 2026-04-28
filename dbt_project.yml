@@ -31,3 +31,14 @@ models:
 seeds:
   finance_lake:
     +schema: silver
+    dim_category_overrides:
+      +column_types:
+        stable_id: varchar
+        category_id: varchar
+        notes: varchar
+    dim_transfer_rules:
+      +column_types:
+        rule_id: varchar
+        pattern: varchar
+        direction: varchar
+        notes: varchar

@@ -26,6 +26,7 @@ bank_numbered as (
 bank as (
     select
         md5(concat_ws('|', holder, account_number, txn_date, amount, raw_description, running_balance, dup_seq)) as transaction_id,
+        md5(concat_ws('|', statement_sha256, account_number, txn_date, amount)) as stable_id,
         holder,
         account_number as account_id,
         txn_date,
@@ -57,6 +58,7 @@ cc_numbered as (
 cc as (
     select
         md5(concat_ws('|', holder, card_number, txn_date, amount, raw_description, dup_seq)) as transaction_id,
+        md5(concat_ws('|', statement_sha256, card_number, txn_date, amount)) as stable_id,
         holder,
         card_number as account_id,
         txn_date,
@@ -75,6 +77,7 @@ unified as (
 
 select
     u.transaction_id,
+    u.stable_id,
     u.holder,
     u.account_id,
     a.friendly_name as account_name,

@@ -1,0 +1,9 @@
+rule_id,pattern,direction,notes
+t001,onlinebillpayment wise,outbound,Wise family / UK account transfers
+t002,scheduledpayment wise,outbound,Wise family / UK account transfers
+t003,onlinebillpayment cra,outbound,CRA tax payments
+t004,transfer to cibc,outbound,Cross-bank transfer to CIBC
+t005,wsinvestmentsinv,outbound,WealthSimple investment platform
+t006,wealthsimple,outbound,WealthSimple investment platform
+t007,ws investment,outbound,WealthSimple investment platform
+t008,questrade,outbound,Questrade investment platform

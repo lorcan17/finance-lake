@@ -54,27 +54,31 @@ matches as (
     where debit_rank = 1 and credit_rank = 1
 ),
 
-investment_transfers as (
-    -- Case C: One-way investment transfers (external buckets we don't ingest).
-    -- Restricted to outbound amounts — inbound dividends/refunds are real income.
-    select
-        transaction_id as debit_txn_id,
+transfer_rules as (
+    select pattern, direction from {{ ref('dim_transfer_rules') }}
+),
+
+one_way_transfers as (
+    -- Case C: One-way outbound transfers to external accounts we don't ingest.
+    -- Patterns are maintained in seeds/dim_transfer_rules.csv — edit there, not here.
+    -- Inbound direction reserved for future use (e.g. flagging inbound wire receipts).
+    -- Excludes transactions already paired in matches to avoid duplicates in combined.
+    select distinct
+        t.transaction_id as debit_txn_id,
         cast(null as varchar) as credit_txn_id,
-        amount
-    from txns
-    where amount < 0
-      and (
-          lower(raw_description) like '%questrade%'
-          or lower(raw_description) like '%wealthsimple%'
-          or lower(raw_description) like '%ws investment%'
-          or lower(raw_description) like '%ws invest%'
-      )
+        t.amount
+    from txns t
+    join transfer_rules r
+      on t.amount < 0
+      and r.direction = 'outbound'
+      and t.clean_description like '%' || r.pattern || '%'
+    where t.transaction_id not in (select debit_txn_id from matches)
 ),
 
 combined as (
     select debit_txn_id, credit_txn_id from matches
     union all
-    select debit_txn_id, credit_txn_id from investment_transfers
+    select debit_txn_id, credit_txn_id from one_way_transfers
 )
 
 select
