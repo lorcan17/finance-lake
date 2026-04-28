@@ -10,8 +10,7 @@ the schema, then use finance_sql() for all data queries.
 
 import os
 import json
-import duckdb
-from typing import Any
+import subprocess
 
 DUCKDB_PATH = os.getenv("FINANCE_DUCKDB", "/var/lib/finance-lake/finance.duckdb")
 
@@ -121,13 +120,14 @@ class Tools:
             return json.dumps({"error": "Only SELECT/WITH/SHOW/DESCRIBE queries are allowed."})
 
         try:
-            con = duckdb.connect(DUCKDB_PATH, read_only=True)
-            result_set = con.execute(query)
-            cols = [d[0] for d in result_set.description]
-            rows = result_set.fetchall()
-            con.close()
-        except Exception as e:
-            return json.dumps({"error": str(e)})
-
-        result = [dict(zip(cols, row)) for row in rows]
-        return json.dumps(result, default=str, indent=2)
+            result = subprocess.run(
+                ["duckdb", "-readonly", "-json", DUCKDB_PATH, query],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode != 0:
+                return json.dumps({"error": result.stderr.strip()})
+            return result.stdout.strip() or "[]"
+        except FileNotFoundError:
+            return json.dumps({"error": "duckdb CLI not found on PATH"})
+        except subprocess.TimeoutExpired:
+            return json.dumps({"error": "Query timed out after 30s"})
