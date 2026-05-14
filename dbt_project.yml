@@ -5,7 +5,7 @@ config-version: 2
 profile: finance_lake
 
 model-paths: ["models"]
-seed-paths: ["seeds"]
+seed-paths: ["seeds", "/var/lib/finance-lake/dbt/seeds"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
 
