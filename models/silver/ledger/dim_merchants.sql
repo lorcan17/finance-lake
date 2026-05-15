@@ -1,19 +1,15 @@
-{{ config(
-    materialized='incremental',
-    unique_key='merchant_id',
-    on_schema_change='append_new_columns'
-) }}
+{{ config(materialized='view') }}
 
--- Canonical merchants with embeddings. Populated by embed_enrich service,
--- which writes directly to this table's underlying storage. dbt materializes
--- the table structure and serves it downstream; embed_enrich is the source of
--- truth for rows.
+-- Passthrough view over silver.dim_merchants, which is written directly by
+-- the embed_enrich service (rule-pass + LLM-embedding categorisation).
+-- A view (not a table) so embed_enrich's writes are immediately visible
+-- to downstream models without needing dbt to re-run.
 
 select
-    cast(null as varchar) as merchant_id,
-    cast(null as varchar) as canonical_name,
-    cast(null as varchar) as category_id,
-    cast(null as float[1536]) as embedding,
-    cast(null as timestamp) as created_at,
-    cast(null as timestamp) as updated_at
-where false
+    merchant_id,
+    canonical_name,
+    category_id,
+    embedding,
+    created_at,
+    updated_at
+from {{ source('embed_enrich', 'dim_merchants') }}

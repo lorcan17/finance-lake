@@ -14,3 +14,12 @@ sources:
         description: "Bank statement detail lines. Grain: statement × posting_date × amount × raw_description. FK statement_sha256 → bank_statements."
       - name: cc_transactions
         description: "Credit card statement detail lines. Grain: statement × txn_date × amount × raw_description. FK statement_sha256 → cc_statements."
+
+  - name: embed_enrich
+    schema: silver
+    description: "Tables written directly by the embed_enrich Python service (rule-pass + LLM-embedding merchant categorisation). Source-of-truth for merchant rows; dbt re-exposes them in main_silver via passthrough views."
+    tables:
+      - name: dim_merchants
+        description: "Canonical merchants with category_id and OpenAI embeddings. Populated by embed_enrich; one row per (canonical_name)."
+      - name: merchant_review_queue
+        description: "Borderline / unmatched merchants needing human review."

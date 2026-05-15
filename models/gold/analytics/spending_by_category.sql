@@ -1,18 +1,18 @@
 {{ config(materialized='table') }}
 
--- Monthly spend per category. Transfers are excluded once transfer-matching
--- lands; for now all outflows count. Income (positive amounts on bank) is
--- filtered out via amount < 0 convention.
+-- Monthly spend per category. Categorisation now lives on fact_transactions
+-- (override > merchant > substring rule > default) — see fact_transactions.sql.
+-- Income (positive amounts) is excluded via amount < 0; transfers are
+-- excluded via the is_transfer flag.
 
 with txns as (
     select
-        t.transaction_id,
-        date_trunc('month', t.txn_date) as month,
-        t.amount,
-        coalesce(m.category_id, 'uncategorised') as category_id
-    from {{ ref('fact_transactions') }} t
-    left join {{ ref('dim_merchants') }} m on m.merchant_id = t.merchant_id
-    where t.amount < 0
+        date_trunc('month', txn_date) as month,
+        category_id,
+        amount
+    from {{ ref('fact_transactions') }}
+    where amount < 0
+      and not is_transfer
 )
 
 select

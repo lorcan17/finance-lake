@@ -1,23 +1,20 @@
 """
-Finance Lake tools for OpenWebUI.
-
-Install via Settings → Tools → + and paste this file.
-Pair with claude-sonnet-4-6 or claude-opus-4-7 — smaller models miss the joins.
-
-The model should call finance_describe() first in any new conversation to load
-the schema, then use finance_sql() for all data queries.
+title: Finance Lake
+author: lorcan
+description: Query personal finance data (transactions, net worth, spending) via DuckDB.
+version: 0.1.0
 """
 
 import os
 import json
-import subprocess
+import duckdb
 
 DUCKDB_PATH = os.getenv("FINANCE_DUCKDB", "/var/lib/finance-lake/finance.duckdb")
 
 SCHEMA_HINT = """
 ## Finance Lake — silver/gold schema
 
-### silver.fact_transactions
+### main_silver.fact_transactions
 - transaction_id VARCHAR (md5 surrogate)
 - holder VARCHAR          -- raw name from statement header (e.g. "LORCAN TRAVERS")
 - account_id VARCHAR      -- account/card number
@@ -33,39 +30,39 @@ SCHEMA_HINT = """
 - is_weekend BOOLEAN
 - is_transfer BOOLEAN     -- always false until transfer-matching lands
 
-### silver.dim_merchants
+### main_silver.dim_merchants
 - merchant_id VARCHAR
 - canonical_name VARCHAR  -- normalised merchant name
 - category_id VARCHAR     -- FK to dim_categories seed
 - match_method VARCHAR    -- 'rule' | 'embedding' | 'manual'
 
-### silver.dim_accounts
+### main_silver.dim_accounts
 - account_id VARCHAR
 - source_system VARCHAR
 - friendly_name VARCHAR
 - account_kind VARCHAR
 - inversion_factor INT    -- 1 for bank, -1 for credit_card (flips CC sign convention)
 
-### gold.spending_by_category
+### main_gold.spending_by_category
 - month DATE              -- first day of month
 - category_id VARCHAR
 - spend DOUBLE            -- always positive (outflows only)
 - txn_count BIGINT
 
-### gold.cash_flow_monthly
+### main_gold.cash_flow_monthly
 - month DATE
 - total_income DOUBLE
 - total_spending DOUBLE
 - net_savings DOUBLE
 - savings_rate DOUBLE     -- 0–1 fraction
 
-### gold.disposable_income
+### main_gold.disposable_income
 - month DATE
 - total_income DOUBLE
 - essential_spending DOUBLE   -- groceries + rent/mortgage + utilities
 - disposable_income DOUBLE
 
-### gold.net_worth_daily
+### main_gold.net_worth_daily
 - as_of_date DATE
 - total_assets DOUBLE     -- Questrade portfolio market value only (v1)
 - total_liabilities DOUBLE  -- always 0 until bank balance extraction lands
@@ -84,7 +81,7 @@ class Tools:
     def __init__(self):
         pass
 
-    def finance_describe(self) -> str:
+    async def finance_describe(self) -> str:
         """
         Returns the Finance Lake schema — column names, types, grain, and conventions.
         Call this at the start of any finance conversation so you understand the data
@@ -92,7 +89,7 @@ class Tools:
         """
         return SCHEMA_HINT
 
-    def finance_sql(self, query: str) -> str:
+    async def finance_sql(self, sql: str) -> str:
         """
         Run a read-only SQL query against the Finance Lake DuckDB database and return
         the results as JSON. The database contains personal finance data: transactions,
@@ -101,33 +98,28 @@ class Tools:
         Always call finance_describe() first if you haven't loaded the schema yet.
 
         Guidelines:
-        - Use silver.fact_transactions for transaction-level questions
-        - Use gold.spending_by_category for category spend summaries
-        - Use gold.cash_flow_monthly for income/savings rate questions
-        - Use gold.net_worth_daily for portfolio/wealth questions
+        - Use main_silver.fact_transactions for transaction-level questions
+        - Use main_gold.spending_by_category for category spend summaries
+        - Use main_gold.cash_flow_monthly for income/savings rate questions
+        - Use main_gold.net_worth_daily for portfolio/wealth questions
         - Amounts: negative = spend, positive = income
         - Filter `where amount < 0` for spending; `where amount > 0` for income
         - Limit results to ≤ 200 rows unless the user asks for more
 
-        :param query: A valid DuckDB SQL SELECT statement (read-only).
+        :param sql: A valid DuckDB SQL SELECT statement (read-only).
         :return: JSON array of result rows, or an error message.
         """
-        query = query.strip()
+        sql = sql.strip()
 
         # Reject anything that isn't a read operation
-        first_word = query.split()[0].upper() if query.split() else ""
+        first_word = sql.split()[0].upper() if sql.split() else ""
         if first_word not in ("SELECT", "WITH", "SHOW", "DESCRIBE", "EXPLAIN"):
             return json.dumps({"error": "Only SELECT/WITH/SHOW/DESCRIBE queries are allowed."})
 
         try:
-            result = subprocess.run(
-                ["duckdb", "-readonly", "-json", DUCKDB_PATH, query],
-                capture_output=True, text=True, timeout=30
-            )
-            if result.returncode != 0:
-                return json.dumps({"error": result.stderr.strip()})
-            return result.stdout.strip() or "[]"
-        except FileNotFoundError:
-            return json.dumps({"error": "duckdb CLI not found on PATH"})
-        except subprocess.TimeoutExpired:
-            return json.dumps({"error": "Query timed out after 30s"})
+            con = duckdb.connect(DUCKDB_PATH, read_only=True)
+            df = con.execute(sql).fetchdf()
+            con.close()
+            return df.to_json(orient="records", date_format="iso")
+        except Exception as e:
+            return json.dumps({"error": str(e)})
