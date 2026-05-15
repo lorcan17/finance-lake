@@ -1,5 +1,5 @@
 {
-  description = "Silver + Gold dbt models and embed-enrich service for Project Foundry";
+  description = "Project Foundry — decision intelligence data lake (ingest, dbt, embed-enrich)";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-parts.url = "github:hercules-ci/flake-parts";
@@ -76,35 +76,35 @@
         # it. Real seeds (gitignored *.csv) are populated at runtime by the
         # OptiPlex systemd unit before `dbt seed` runs.
         projectTree = pkgs.stdenv.mkDerivation {
-          pname = "finance-lake-tree";
-          version = "0.1.0";
+          pname = "foundry-tree";
+          version = "0.3.0";
           src = ./.;
           installPhase = ''
-            mkdir -p $out/share/finance-lake
+            mkdir -p $out/share/foundry
             cp -r dbt_project.yml profiles.yml models seeds embed_enrich ingest \
-              $out/share/finance-lake/
+              $out/share/foundry/
           '';
         };
 
       in {
         packages = {
           default = pkgs.symlinkJoin {
-            name = "finance-lake";
+            name = "foundry";
             paths = [
               projectTree
               (pkgs.writeShellApplication {
                 name = "embed-enrich";
                 runtimeInputs = [ pythonEnv ];
                 text = ''
-                  cd ${projectTree}/share/finance-lake
+                  cd ${projectTree}/share/foundry
                   exec python -m embed_enrich "$@"
                 '';
               })
               (pkgs.writeShellApplication {
-                name = "finance-lake-dbt";
+                name = "foundry-dbt";
                 runtimeInputs = [ pythonEnv ];
                 text = ''
-                  cd ${projectTree}/share/finance-lake
+                  cd ${projectTree}/share/foundry
                   exec dbt "$@"
                 '';
               })
@@ -112,12 +112,20 @@
                 name = "ingest-paperless-hook";
                 runtimeInputs = [ pythonEnv ];
                 text = ''
-                  cd ${projectTree}/share/finance-lake
+                  cd ${projectTree}/share/foundry
                   exec python -m ingest.adapters.paperless "$@"
                 '';
               })
+              (pkgs.writeShellApplication {
+                name = "ingest-questrade";
+                runtimeInputs = [ pythonEnv ];
+                text = ''
+                  cd ${projectTree}/share/foundry
+                  exec python -m ingest.brokers.questrade "$@"
+                '';
+              })
             ];
-            meta.description = "Project Foundry: embed-enrich + dbt orchestration";
+            meta.description = "Project Foundry: decision intelligence data lake";
           };
 
           # Expose the python env separately so the systemd unit can also run
