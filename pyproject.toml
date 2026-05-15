@@ -6,9 +6,9 @@ build-backend = "hatchling.build"
 packages = ["embed_enrich", "ingest"]
 
 [project]
-name = "finance-lake"
-version = "0.2.0"
-description = "Silver + Gold layer and embed-enrich service for Project Foundry"
+name = "foundry"
+version = "0.3.0"
+description = "Decision intelligence data lake — ingest, dbt models, and MCP tools"
 requires-python = ">=3.12"
 dependencies = [
     "dbt-duckdb>=1.9.0",
@@ -21,9 +21,10 @@ dependencies = [
 
 [project.scripts]
 ingest-paperless-hook = "ingest.adapters.paperless:main"
+ingest-questrade = "ingest.brokers.questrade:main"
 
 [tool.uv.sources]
-statement-extract = { path = "../statement-extract", editable = true }
+statement-extract = { git = "https://github.com/lorcan17/statement-extract", rev = "d9fb702897cc1883448b3b619cb2f34d776e7781" }
 
 [dependency-groups]
 dev = [

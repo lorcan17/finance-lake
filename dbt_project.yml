@@ -1,11 +1,11 @@
-name: finance_lake
-version: 0.1.0
+name: foundry
+version: 0.3.0
 config-version: 2
 
-profile: finance_lake
+profile: foundry
 
 model-paths: ["models"]
-seed-paths: ["seeds", "/var/lib/finance-lake/dbt/seeds"]
+seed-paths: ["seeds", "/var/lib/foundry/dbt/seeds"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
 
@@ -20,7 +20,7 @@ on-run-start:
   - "SET hnsw_enable_experimental_persistence = true"
 
 models:
-  finance_lake:
+  foundry:
     silver:
       +schema: silver
       +materialized: table
@@ -29,7 +29,7 @@ models:
       +materialized: table
 
 seeds:
-  finance_lake:
+  foundry:
     +schema: silver
     dim_category_overrides:
       +column_types:
