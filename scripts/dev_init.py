@@ -11,12 +11,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-LAKE_ROOT = Path(os.environ.get("LAKE_ROOT", Path.home() / ".local" / "share" / "foundry" / "lake"))
+FOUNDRY_HOME = Path(os.environ.get("FOUNDRY_HOME", Path.home() / ".local" / "share" / "foundry"))
+LAKE_ROOT = Path(os.environ.get("LAKE_ROOT", FOUNDRY_HOME / "lake"))
 
 LAKE_DIRS = [
-    LAKE_ROOT / "bronze",
-    LAKE_ROOT / "silver",
     LAKE_ROOT / "inbox",
+    LAKE_ROOT / "bronze",
 ]
 
 
@@ -25,10 +25,10 @@ def main() -> None:
         d.mkdir(parents=True, exist_ok=True)
         print(f"  ok  {d}")
 
-    db = LAKE_ROOT / "silver" / "finance.duckdb"
+    db = FOUNDRY_HOME / "foundry.duckdb"
     print()
-    print(f"LAKE_ROOT       = {LAKE_ROOT}")
-    print(f"FINANCE_DUCKDB  = {db}")
+    print(f"LAKE_ROOT  = {LAKE_ROOT}")
+    print(f"DUCKDB     = {db}")
     print()
     if not db.exists():
         print("DuckDB not found — run scripts/dev_bootstrap.py to seed from OptiPlex,")

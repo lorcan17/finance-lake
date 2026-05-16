@@ -9,7 +9,7 @@ import os
 import json
 import duckdb
 
-DUCKDB_PATH = os.getenv("FINANCE_DUCKDB", "/var/lib/finance-lake/finance.duckdb")
+DUCKDB_PATH = os.getenv("FINANCE_DUCKDB", "/var/lib/foundry/foundry.duckdb")
 
 SCHEMA_HINT = """
 ## Finance Lake — silver/gold schema

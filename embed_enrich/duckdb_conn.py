@@ -8,7 +8,7 @@ def default_db_path() -> Path:
     env = os.environ.get("FINANCE_DUCKDB")
     if env:
         return Path(env)
-    return Path.home() / ".local" / "share" / "finance-lake" / "finance.duckdb"
+    return Path.home() / ".local" / "share" / "foundry" / "foundry.duckdb"
 
 
 def connect(db_path: Path | None = None) -> duckdb.DuckDBPyConnection:
