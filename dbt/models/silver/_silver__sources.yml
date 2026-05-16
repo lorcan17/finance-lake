@@ -14,6 +14,8 @@ sources:
         description: "Bank statement detail lines. Grain: statement × posting_date × amount × raw_description. FK statement_sha256 → bank_statements."
       - name: cc_transactions
         description: "Credit card statement detail lines. Grain: statement × txn_date × amount × raw_description. FK statement_sha256 → cc_statements."
+      - name: banking_csv_raw
+        description: "Raw rows from bank/CC CSV exports dropped via inbox. Validation only — not promoted to fact_transactions. Gaps against PDF-sourced rows surface in silver.reconciliation_gaps."
 
   - name: embed_enrich
     schema: silver

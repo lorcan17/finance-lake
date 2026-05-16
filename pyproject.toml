@@ -26,6 +26,7 @@ dependencies = [
 [project.scripts]
 ingest-paperless-hook = "ingest.adapters.paperless:main"
 ingest-questrade = "ingest.brokers.questrade:main"
+ingest-inbox-banking = "ingest.adapters.inbox_banking:main"
 
 [tool.uv.sources]
 statement-extract = { git = "https://github.com/lorcan17/statement-extract", rev = "d9fb702897cc1883448b3b619cb2f34d776e7781" }

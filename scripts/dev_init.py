@@ -15,7 +15,7 @@ FOUNDRY_HOME = Path(os.environ.get("FOUNDRY_HOME", Path.home() / ".local" / "sha
 LAKE_ROOT = Path(os.environ.get("LAKE_ROOT", FOUNDRY_HOME / "lake"))
 
 LAKE_DIRS = [
-    LAKE_ROOT / "inbox",
+    LAKE_ROOT / "inbox" / "banking",
     LAKE_ROOT / "bronze",
 ]
 
