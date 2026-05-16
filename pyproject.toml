@@ -21,12 +21,14 @@ dependencies = [
     "opentelemetry-api>=1.25",
     "opentelemetry-sdk>=1.25",
     "opentelemetry-exporter-otlp-proto-grpc>=1.25",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
 ingest-paperless-hook = "ingest.adapters.paperless:main"
 ingest-questrade = "ingest.brokers.questrade:main"
 ingest-inbox-banking = "ingest.adapters.inbox_banking:main"
+ingest-obsidian-theses = "ingest.obsidian.theses:main"
 
 [tool.uv.sources]
 statement-extract = { git = "https://github.com/lorcan17/statement-extract", rev = "d9fb702897cc1883448b3b619cb2f34d776e7781" }

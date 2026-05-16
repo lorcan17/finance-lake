@@ -504,6 +504,7 @@ dependencies = [
     { name = "opentelemetry-exporter-otlp-proto-grpc" },
     { name = "opentelemetry-sdk" },
     { name = "pydantic" },
+    { name = "pyyaml" },
     { name = "questrade-extract" },
     { name = "statement-extract" },
 ]
@@ -524,6 +525,7 @@ requires-dist = [
     { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.25" },
     { name = "opentelemetry-sdk", specifier = ">=1.25" },
     { name = "pydantic", specifier = ">=2.9.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
     { name = "questrade-extract", git = "https://github.com/lorcan17/questrade-extract?rev=5a83c99" },
     { name = "statement-extract", git = "https://github.com/lorcan17/statement-extract?rev=d9fb702897cc1883448b3b619cb2f34d776e7781" },
 ]
