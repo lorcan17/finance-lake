@@ -13,9 +13,15 @@ from pathlib import Path
 
 import duckdb
 
+from foundry._telemetry import setup_meter
 from ingest._lib.bronze import land
 from ingest.core import ingest_pdf
 from ingest.sources import IngestResult, SourceRef
+
+_provider, _meter = setup_meter("foundry.ingest.banking")
+_parse_counter = _meter.create_counter("banking.statements.parsed")
+_row_counter = _meter.create_counter("banking.rows.inserted")
+_error_counter = _meter.create_counter("banking.statements.errors")
 
 
 def ingest_statement(
@@ -31,4 +37,13 @@ def ingest_statement(
     """
     land("banking", source_name, pdf)
     source = SourceRef(type="local", id=str(pdf))
-    return ingest_pdf(pdf, source, con)
+    result = ingest_pdf(pdf, source, con)
+
+    labels = {"bank": result.bank or "unknown", "was_finance_doc": str(result.was_finance_doc)}
+    _parse_counter.add(1, labels)
+    if result.was_finance_doc and result.was_new_row:
+        _row_counter.add(1, labels)
+    if result.validation_issues:
+        _error_counter.add(len(result.validation_issues), labels)
+
+    return result
