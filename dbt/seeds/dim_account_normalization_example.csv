@@ -1,0 +1,3 @@
+account_id,friendly_name,inversion_factor,is_active,expected_frequency,start_date
+12345678,Checking Account,1,true,monthly,2022-01-01
+87654321,Main Visa,-1,true,monthly,2022-01-01

@@ -1,0 +1,17 @@
+account_id,friendly_name,inversion_factor,is_active,expected_frequency,start_date
+09863961-086,Checking Account,1,true,monthly,2022-01-01
+110028945438,Savings Account,1,true,monthly,2022-01-01
+104754589,Secondary Checking,1,true,monthly,2022-01-01
+09863960-921,Utility Account,1,true,monthly,2022-01-01
+09868952-680,Tax Account,1,true,monthly,2022-01-01
+27138955-387,External Savings 1,1,true,monthly,2022-01-01
+110028945446,Joint Account,1,true,monthly,2022-01-01
+27138955-395,External Savings 2,1,true,monthly,2022-01-01
+XXXX XXXX XXXX 5780,Main Visa,-1,true,monthly,2022-01-01
+3534,Travel Amex,-1,true,monthly,2022-01-01
+3880,Business Mastercard,-1,true,monthly,2022-01-01
+31000,Retail Card 1,-1,true,monthly,2022-01-01
+32008,Retail Card 2,-1,true,monthly,2022-01-01
+XXXX XXXX XXXX 9808,Backup Visa,-1,true,monthly,2022-01-01
+XXXX XXXX XXXX 0300,Cashback Card,-1,true,monthly,2022-01-01
+XXXX XXXX XXXX 4330,Premium Visa,-1,true,monthly,2022-01-01

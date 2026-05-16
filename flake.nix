@@ -81,7 +81,7 @@
           src = ./.;
           installPhase = ''
             mkdir -p $out/share/foundry
-            cp -r dbt_project.yml profiles.yml models seeds embed_enrich ingest \
+            cp -r dbt_project.yml profiles.yml dbt embed_enrich ingest \
               $out/share/foundry/
           '';
         };

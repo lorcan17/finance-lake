@@ -4,8 +4,8 @@ config-version: 2
 
 profile: foundry
 
-model-paths: ["models"]
-seed-paths: ["seeds", "/var/lib/foundry/dbt/seeds"]
+model-paths: ["dbt/models"]
+seed-paths: ["dbt/seeds", "/var/lib/foundry/dbt/seeds"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
 
