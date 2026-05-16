@@ -16,7 +16,7 @@ from embed_enrich.duckdb_conn import connect
 
 OPTIPLEX_HOST = "optiplex"
 REMOTE_DB = "/var/lib/questrade-extract/questrade.db"
-LOCAL_DATA = Path.home() / ".local" / "share" / "finance-lake"
+LOCAL_DATA = Path.home() / ".local" / "share" / "foundry" / "lake"
 
 
 def scp_questrade() -> Path:

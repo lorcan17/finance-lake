@@ -12,6 +12,7 @@ introduces a regression.
 """
 from __future__ import annotations
 
+import os
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +27,9 @@ STATEMENTS_ROOT = Path.home() / "Documents" / "bank-statements"
 
 def _backup_duckdb() -> Path | None:
     """Copy finance.duckdb next to itself with a timestamp suffix."""
-    db_path = Path.home() / ".local" / "share" / "finance-lake" / "finance.duckdb"
+    db_path = Path(os.environ.get("FINANCE_DUCKDB",
+        str(Path.home() / ".local" / "share" / "foundry" / "lake" / "silver" / "finance.duckdb")
+    ))
     if not db_path.exists():
         # New install — nothing to back up. Caller proceeds.
         return None

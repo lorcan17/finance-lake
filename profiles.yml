@@ -3,7 +3,7 @@ foundry:
   outputs:
     dev:
       type: duckdb
-      path: "{{ env_var('HOME') }}/.local/share/foundry/finance.duckdb"
+      path: "{{ env_var('HOME') }}/.local/share/foundry/lake/silver/finance.duckdb"
       extensions:
         - vss
       threads: 4
